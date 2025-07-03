@@ -106,7 +106,17 @@ class WordPressService {
 
       // Add location info to content if available
       if (location) {
-        postContent += `\n\n📍 **Locatie:** ${location.latitude.toFixed(6)}°, ${location.longitude.toFixed(6)}°`;
+        if (location.locationName) {
+          postContent += `\n\n📍 **Locatie:** ${location.locationName}`;
+          postContent += `\n🌐 **Coördinaten:** ${location.latitude.toFixed(6)}°, ${location.longitude.toFixed(6)}°`;
+          
+          if (location.address) {
+            postContent += `\n🗺️ **Volledig adres:** ${location.address}`;
+          }
+        } else {
+          postContent += `\n\n📍 **Locatie:** ${location.latitude.toFixed(6)}°, ${location.longitude.toFixed(6)}°`;
+        }
+        
         postContent += `\n🗺️ <a href="${location.mapUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">Bekijk locatie op Google Maps</a>`;
       }
 
@@ -134,6 +144,14 @@ class WordPressService {
         customFields.location_latitude = location.latitude;
         customFields.location_longitude = location.longitude;
         customFields.location_map_url = location.mapUrl;
+        
+        if (location.locationName) {
+          customFields.location_name = location.locationName;
+        }
+        
+        if (location.address) {
+          customFields.location_address = location.address;
+        }
       }
 
       if (Object.keys(customFields).length > 0) {

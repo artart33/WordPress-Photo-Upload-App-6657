@@ -8,13 +8,14 @@ import LocationService from '../services/LocationService';
 import WordPressService from '../services/WordPressService';
 import Notification from './Notification';
 
-const { FiUpload, FiCamera, FiImage, FiMapPin, FiSend, FiLoader, FiSettings } = FiIcons;
+const { FiUpload, FiCamera, FiImage, FiMapPin, FiSend, FiLoader, FiSettings, FiClock } = FiIcons;
 
 const PhotoUploader = () => {
   const { settings } = useSettings();
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [location, setLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [categories, setCategories] = useState([]);
@@ -45,13 +46,21 @@ const PhotoUploader = () => {
     reader.readAsDataURL(file);
 
     // Extract location from EXIF or get current location
+    setLocationLoading(true);
     try {
       const locationData = await LocationService.getPhotoLocation(file);
       setLocation(locationData);
-      showNotification('Locatie succesvol bepaald', 'success');
+      
+      if (locationData.locationName) {
+        showNotification(`Locatie gevonden: ${locationData.locationName}`, 'success');
+      } else {
+        showNotification('Locatie gevonden (coördinaten)', 'success');
+      }
     } catch (error) {
       console.error('Location error:', error);
       showNotification('Kon geen locatie bepalen', 'warning');
+    } finally {
+      setLocationLoading(false);
     }
 
     // Load WordPress categories if configured
@@ -243,7 +252,19 @@ const PhotoUploader = () => {
               </motion.button>
             </div>
             
-            {location && (
+            {/* Location Display */}
+            {locationLoading ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <SafeIcon icon={FiClock} className="text-blue-600 animate-pulse" />
+                  <span className="font-medium text-blue-800">Locatie wordt bepaald...</span>
+                </div>
+              </motion.div>
+            ) : location ? (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -253,14 +274,32 @@ const PhotoUploader = () => {
                   <SafeIcon icon={FiMapPin} className="text-green-600" />
                   <span className="font-medium text-green-800">Locatie Gevonden</span>
                 </div>
-                <p className="text-sm text-green-700 mb-2">
-                  {location.latitude.toFixed(6)}°, {location.longitude.toFixed(6)}°
-                </p>
+                
+                {location.locationName ? (
+                  <div className="space-y-2">
+                    <p className="text-green-800 font-medium">
+                      📍 {location.locationName}
+                    </p>
+                    <p className="text-sm text-green-700">
+                      🌐 {location.latitude.toFixed(6)}°, {location.longitude.toFixed(6)}°
+                    </p>
+                    {location.address && (
+                      <p className="text-xs text-green-600">
+                        {location.address}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-green-700 mb-2">
+                    {location.latitude.toFixed(6)}°, {location.longitude.toFixed(6)}°
+                  </p>
+                )}
+                
                 <motion.a
                   href={location.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center space-x-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors mt-3"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -268,7 +307,7 @@ const PhotoUploader = () => {
                   <span>Bekijk op kaart</span>
                 </motion.a>
               </motion.div>
-            )}
+            ) : null}
           </div>
         )}
       </motion.div>

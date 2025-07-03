@@ -59,9 +59,24 @@ const PostHistory = () => {
     return ratingMatch ? parseInt(ratingMatch[1]) : 0;
   };
 
-  const extractMapUrlFromContent = (content) => {
-    const mapMatch = content.match(/<a href="([^"]*maps[^"]*)"[^>]*>.*?<\/a>/);
-    return mapMatch ? mapMatch[1] : null;
+  const extractLocationFromContent = (content) => {
+    // Extract location name
+    const locationNameMatch = content.match(/📍 \*\*Locatie:\*\* ([^<\n]*)/);
+    const locationName = locationNameMatch ? locationNameMatch[1].trim() : null;
+    
+    // Extract coordinates
+    const coordsMatch = content.match(/🌐 \*\*Coördinaten:\*\* ([0-9.-]+)°, ([0-9.-]+)°/) || 
+                       content.match(/📍 \*\*Locatie:\*\* ([0-9.-]+)°, ([0-9.-]+)°/);
+    
+    // Extract map URL
+    const mapMatch = content.match(/<a href="([^"]*maps[^"]*)"[^>]*>/);
+    const mapUrl = mapMatch ? mapMatch[1] : null;
+    
+    return {
+      locationName,
+      coordinates: coordsMatch ? { lat: coordsMatch[1], lon: coordsMatch[2] } : null,
+      mapUrl
+    };
   };
 
   if (!settings.isConfigured) {
@@ -128,7 +143,7 @@ const PostHistory = () => {
           <div className="grid gap-6">
             {posts.map((post, index) => {
               const rating = extractRatingFromContent(post.content.rendered);
-              const mapUrl = extractMapUrlFromContent(post.content.rendered);
+              const locationData = extractLocationFromContent(post.content.rendered);
               
               return (
                 <motion.div
@@ -183,24 +198,35 @@ const PostHistory = () => {
                     />
                   )}
 
-                  {mapUrl && (
+                  {(locationData.locationName || locationData.coordinates || locationData.mapUrl) && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <SafeIcon icon={FiMapPin} className="text-green-600" />
-                          <span className="text-sm font-medium text-green-800">Locatie beschikbaar</span>
+                          <div>
+                            <span className="text-sm font-medium text-green-800">
+                              {locationData.locationName ? locationData.locationName : 'Locatie beschikbaar'}
+                            </span>
+                            {locationData.coordinates && (
+                              <p className="text-xs text-green-600 mt-1">
+                                {locationData.coordinates.lat}°, {locationData.coordinates.lon}°
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <motion.a
-                          href={mapUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center space-x-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <SafeIcon icon={FiMapPin} className="text-xs" />
-                          <span>Bekijk op kaart</span>
-                        </motion.a>
+                        {locationData.mapUrl && (
+                          <motion.a
+                            href={locationData.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <SafeIcon icon={FiMapPin} className="text-xs" />
+                            <span>Bekijk op kaart</span>
+                          </motion.a>
+                        )}
                       </div>
                     </div>
                   )}
