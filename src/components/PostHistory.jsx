@@ -7,7 +7,7 @@ import { useSettings } from '../context/SettingsContext';
 import WordPressService from '../services/WordPressService';
 import Notification from './Notification';
 
-const { FiClock, FiExternalLink, FiMapPin, FiRefreshCw, FiImage } = FiIcons;
+const { FiClock, FiExternalLink, FiMapPin, FiRefreshCw, FiImage, FiTag } = FiIcons;
 
 const PostHistory = () => {
   const { settings } = useSettings();
@@ -59,19 +59,27 @@ const PostHistory = () => {
     return ratingMatch ? parseInt(ratingMatch[1]) : 0;
   };
 
+  const extractTagsFromContent = (content) => {
+    const tagsMatch = content.match(/🏷️ \*\*Tags:\*\* (.+?)(?:\n|$)/);
+    if (tagsMatch) {
+      return tagsMatch[1].split(' ').map(tag => tag.replace('#', ''));
+    }
+    return [];
+  };
+
   const extractLocationFromContent = (content) => {
     // Extract location name
     const locationNameMatch = content.match(/📍 \*\*Locatie:\*\* ([^<\n]*)/);
     const locationName = locationNameMatch ? locationNameMatch[1].trim() : null;
-    
+
     // Extract coordinates
-    const coordsMatch = content.match(/🌐 \*\*Coördinaten:\*\* ([0-9.-]+)°, ([0-9.-]+)°/) || 
-                       content.match(/📍 \*\*Locatie:\*\* ([0-9.-]+)°, ([0-9.-]+)°/);
-    
+    const coordsMatch = content.match(/🌐 \*\*Coördinaten:\*\* ([0-9.-]+)°,([0-9.-]+)°/) || 
+                       content.match(/📍 \*\*Locatie:\*\* ([0-9.-]+)°,([0-9.-]+)°/);
+
     // Extract map URL
     const mapMatch = content.match(/<a href="([^"]*maps[^"]*)"[^>]*>/);
     const mapUrl = mapMatch ? mapMatch[1] : null;
-    
+
     return {
       locationName,
       coordinates: coordsMatch ? { lat: coordsMatch[1], lon: coordsMatch[2] } : null,
@@ -143,8 +151,9 @@ const PostHistory = () => {
           <div className="grid gap-6">
             {posts.map((post, index) => {
               const rating = extractRatingFromContent(post.content.rendered);
+              const tags = extractTagsFromContent(post.content.rendered);
               const locationData = extractLocationFromContent(post.content.rendered);
-              
+
               return (
                 <motion.div
                   key={post.id}
@@ -158,6 +167,7 @@ const PostHistory = () => {
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         {post.title.rendered}
                       </h3>
+                      
                       <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
                         <div className="flex items-center space-x-1">
                           <SafeIcon icon={FiClock} />
@@ -170,10 +180,25 @@ const PostHistory = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       {rating > 0 && (
                         <div className="mb-3">
                           <StarRating rating={rating} readonly={true} />
+                        </div>
+                      )}
+
+                      {/* Tags Display */}
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {tags.map((tag, tagIndex) => (
+                            <span
+                              key={tagIndex}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
+                            >
+                              <SafeIcon icon={FiTag} className="text-xs" />
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -214,6 +239,7 @@ const PostHistory = () => {
                             )}
                           </div>
                         </div>
+                        
                         {locationData.mapUrl && (
                           <motion.a
                             href={locationData.mapUrl}
@@ -236,7 +262,7 @@ const PostHistory = () => {
                       {post.categories.map((categoryId) => (
                         <span
                           key={categoryId}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                          className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full"
                         >
                           Categorie {categoryId}
                         </span>

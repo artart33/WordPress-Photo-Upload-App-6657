@@ -2,24 +2,29 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import SafeIcon from '../common/SafeIcon';
 import StarRating from './StarRating';
+import TagInput from './TagInput';
 import * as FiIcons from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import LocationService from '../services/LocationService';
+import WeatherService from '../services/WeatherService';
 import WordPressService from '../services/WordPressService';
 import Notification from './Notification';
 
-const { FiUpload, FiCamera, FiImage, FiMapPin, FiSend, FiLoader, FiSettings, FiClock } = FiIcons;
+const { FiUpload, FiCamera, FiImage, FiMapPin, FiSend, FiLoader, FiSettings, FiClock, FiCloudRain } = FiIcons;
 
 const PhotoUploader = () => {
   const { settings } = useSettings();
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [location, setLocation] = useState(null);
+  const [weather, setWeather] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [tags, setTags] = useState([]);
   const [rating, setRating] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -52,10 +57,24 @@ const PhotoUploader = () => {
       setLocation(locationData);
       
       if (locationData.locationName) {
-        showNotification(`Locatie gevonden: ${locationData.locationName}`, 'success');
+        showNotification(`📍 ${locationData.locationName}`, 'success');
       } else {
-        showNotification('Locatie gevonden (coördinaten)', 'success');
+        showNotification('📍 Locatie gevonden', 'success');
       }
+
+      // Get weather for this location
+      setWeatherLoading(true);
+      try {
+        const weatherData = await WeatherService.getCurrentWeather(locationData.latitude, locationData.longitude);
+        setWeather(weatherData);
+        showNotification(`🌤️ ${weatherData.summary}`, 'info');
+      } catch (error) {
+        console.error('Weather error:', error);
+        showNotification('Kon weer info niet ophalen', 'warning');
+      } finally {
+        setWeatherLoading(false);
+      }
+      
     } catch (error) {
       console.error('Location error:', error);
       showNotification('Kon geen locatie bepalen', 'warning');
@@ -113,24 +132,28 @@ const PhotoUploader = () => {
         title: title.trim(),
         content: content.trim(),
         categories: selectedCategories,
+        tags: tags,
         location,
+        weather,
         rating
       }, settings);
 
-      showNotification('Post succesvol gepubliceerd!', 'success');
+      showNotification('🎉 Post succesvol gepubliceerd!', 'success');
       
       // Reset form
       setSelectedPhoto(null);
       setPhotoPreview(null);
       setLocation(null);
+      setWeather(null);
       setTitle('');
       setContent('');
       setSelectedCategories([]);
+      setTags([]);
       setRating(0);
       
     } catch (error) {
       console.error('Upload error:', error);
-      showNotification('Er ging iets mis bij het uploaden', 'error');
+      showNotification('❌ Er ging iets mis bij het uploaden', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -242,6 +265,8 @@ const PhotoUploader = () => {
                   setSelectedPhoto(null);
                   setPhotoPreview(null);
                   setLocation(null);
+                  setWeather(null);
+                  setTags([]);
                   setRating(0);
                 }}
                 className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
@@ -252,62 +277,93 @@ const PhotoUploader = () => {
               </motion.button>
             </div>
             
-            {/* Location Display */}
-            {locationLoading ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-blue-50 border border-blue-200 rounded-lg p-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <SafeIcon icon={FiClock} className="text-blue-600 animate-pulse" />
-                  <span className="font-medium text-blue-800">Locatie wordt bepaald...</span>
-                </div>
-              </motion.div>
-            ) : location ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-green-50 border border-green-200 rounded-lg p-4"
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  <SafeIcon icon={FiMapPin} className="text-green-600" />
-                  <span className="font-medium text-green-800">Locatie Gevonden</span>
-                </div>
-                
-                {location.locationName ? (
-                  <div className="space-y-2">
-                    <p className="text-green-800 font-medium">
-                      📍 {location.locationName}
+            {/* Location & Weather Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Location Display */}
+              {locationLoading ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <SafeIcon icon={FiClock} className="text-blue-600 animate-pulse" />
+                    <span className="font-medium text-blue-800">📍 Locatie bepalen...</span>
+                  </div>
+                </motion.div>
+              ) : location ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-green-50 border border-green-200 rounded-lg p-4"
+                >
+                  <div className="flex items-center space-x-2 mb-2">
+                    <SafeIcon icon={FiMapPin} className="text-green-600" />
+                    <span className="font-medium text-green-800">Locatie</span>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-green-800 font-medium text-sm">
+                      📍 {location.locationName || `${location.latitude.toFixed(4)}°, ${location.longitude.toFixed(4)}°`}
                     </p>
-                    <p className="text-sm text-green-700">
-                      🌐 {location.latitude.toFixed(6)}°, {location.longitude.toFixed(6)}°
-                    </p>
-                    {location.address && (
+                    {location.locationName && (
                       <p className="text-xs text-green-600">
-                        {location.address}
+                        🌐 {location.latitude.toFixed(6)}°, {location.longitude.toFixed(6)}°
                       </p>
                     )}
                   </div>
-                ) : (
-                  <p className="text-sm text-green-700 mb-2">
-                    {location.latitude.toFixed(6)}°, {location.longitude.toFixed(6)}°
-                  </p>
-                )}
-                
-                <motion.a
-                  href={location.mapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors mt-3"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  
+                  <motion.a
+                    href={location.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors mt-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <SafeIcon icon={FiMapPin} className="text-xs" />
+                    <span>Kaart</span>
+                  </motion.a>
+                </motion.div>
+              ) : null}
+
+              {/* Weather Display */}
+              {weatherLoading ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
                 >
-                  <SafeIcon icon={FiMapPin} className="text-sm" />
-                  <span>Bekijk op kaart</span>
-                </motion.a>
-              </motion.div>
-            ) : null}
+                  <div className="flex items-center space-x-2">
+                    <SafeIcon icon={FiCloudRain} className="text-blue-600 animate-pulse" />
+                    <span className="font-medium text-blue-800">🌤️ Weer ophalen...</span>
+                  </div>
+                </motion.div>
+              ) : weather ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                >
+                  <div className="flex items-center space-x-2 mb-2">
+                    <SafeIcon icon={FiCloudRain} className="text-blue-600" />
+                    <span className="font-medium text-blue-800">Weer</span>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-blue-800 font-medium text-sm">
+                      {weather.icon} {weather.temperature}°C
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      💨 {weather.windSpeed} km/h • 💧 {weather.humidity}%
+                    </p>
+                    <p className="text-xs text-blue-700 capitalize">
+                      {weather.condition}
+                    </p>
+                  </div>
+                </motion.div>
+              ) : null}
+            </div>
           </div>
         )}
       </motion.div>
@@ -358,6 +414,13 @@ const PhotoUploader = () => {
               onRatingChange={setRating}
             />
           </div>
+
+          {/* Tags Input */}
+          <TagInput
+            tags={tags}
+            onTagsChange={setTags}
+            placeholder="Voeg tags toe voor specifieke trefwoorden..."
+          />
           
           {categories.length > 0 && (
             <div>
