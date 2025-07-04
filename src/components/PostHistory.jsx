@@ -1,48 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import SafeIcon from '../common/SafeIcon';
-import StarRating from './StarRating';
-import * as FiIcons from 'react-icons/fi';
-import { useSettings } from '../context/SettingsContext';
-import WordPressService from '../services/WordPressService';
-import Notification from './Notification';
+import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import SafeIcon from '../common/SafeIcon'
+import StarRating from './StarRating'
+import * as FiIcons from 'react-icons/fi'
+import { useSettings } from '../context/SettingsContext'
+import WordPressService from '../services/WordPressService'
+import Notification from './Notification'
 
-const { FiClock, FiExternalLink, FiMapPin, FiRefreshCw, FiImage, FiTag } = FiIcons;
+const { FiClock, FiExternalLink, FiMapPin, FiRefreshCw, FiImage, FiTag } = FiIcons
 
 const PostHistory = () => {
-  const { settings } = useSettings();
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const { settings } = useSettings()
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [notification, setNotification] = useState(null)
 
   const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000);
-  };
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 5000)
+  }
 
   const loadPosts = async () => {
     if (!settings.isConfigured) {
-      showNotification('Configureer eerst je WordPress instellingen', 'error');
-      return;
+      showNotification('Configureer eerst je WordPress instellingen', 'error')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      const recentPosts = await WordPressService.getPosts(settings);
-      setPosts(recentPosts);
+      const recentPosts = await WordPressService.getPosts(settings)
+      setPosts(recentPosts)
     } catch (error) {
-      console.error('Failed to load posts:', error);
-      showNotification('Kon posts niet laden', 'error');
+      console.error('Failed to load posts:', error)
+      showNotification('Kon posts niet laden', 'error')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     if (settings.isConfigured) {
-      loadPosts();
+      loadPosts()
     }
-  }, [settings.isConfigured]);
+  }, [settings.isConfigured])
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('nl-NL', {
@@ -51,41 +51,44 @@ const PostHistory = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    });
-  };
+    })
+  }
 
   const extractRatingFromContent = (content) => {
-    const ratingMatch = content.match(/\((\d)\/5 sterren\)/);
-    return ratingMatch ? parseInt(ratingMatch[1]) : 0;
-  };
+    const ratingMatch = content.match(/\((\d)\/5 sterren\)/)
+    return ratingMatch ? parseInt(ratingMatch[1]) : 0
+  }
 
   const extractTagsFromContent = (content) => {
-    const tagsMatch = content.match(/🏷️ \*\*Tags:\*\* (.+?)(?:\n|$)/);
+    const tagsMatch = content.match(/🏷️ \*\*Tags:\*\* (.+?)(?:\n|$)/)
     if (tagsMatch) {
-      return tagsMatch[1].split(' ').map(tag => tag.replace('#', ''));
+      return tagsMatch[1].split(' ').map(tag => tag.replace('#', ''))
     }
-    return [];
-  };
+    return []
+  }
 
   const extractLocationFromContent = (content) => {
     // Extract location name
-    const locationNameMatch = content.match(/📍 \*\*Locatie:\*\* ([^<\n]*)/);
-    const locationName = locationNameMatch ? locationNameMatch[1].trim() : null;
+    const locationNameMatch = content.match(/📍 \*\*Locatie:\*\* ([^<\n]*)/)
+    const locationName = locationNameMatch ? locationNameMatch[1].trim() : null
 
     // Extract coordinates
     const coordsMatch = content.match(/🌐 \*\*Coördinaten:\*\* ([0-9.-]+)°,([0-9.-]+)°/) || 
-                       content.match(/📍 \*\*Locatie:\*\* ([0-9.-]+)°,([0-9.-]+)°/);
+                       content.match(/📍 \*\*Locatie:\*\* ([0-9.-]+)°,([0-9.-]+)°/)
 
     // Extract map URL
-    const mapMatch = content.match(/<a href="([^"]*maps[^"]*)"[^>]*>/);
-    const mapUrl = mapMatch ? mapMatch[1] : null;
+    const mapMatch = content.match(/<a href="([^"]*maps[^"]*)"[^>]*>/)
+    const mapUrl = mapMatch ? mapMatch[1] : null
 
     return {
       locationName,
-      coordinates: coordsMatch ? { lat: coordsMatch[1], lon: coordsMatch[2] } : null,
+      coordinates: coordsMatch ? {
+        lat: coordsMatch[1],
+        lon: coordsMatch[2]
+      } : null,
       mapUrl
-    };
-  };
+    }
+  }
 
   if (!settings.isConfigured) {
     return (
@@ -111,7 +114,7 @@ const PostHistory = () => {
           </motion.a>
         </motion.div>
       </div>
-    );
+    )
   }
 
   return (
@@ -150,9 +153,9 @@ const PostHistory = () => {
         ) : (
           <div className="grid gap-6">
             {posts.map((post, index) => {
-              const rating = extractRatingFromContent(post.content.rendered);
-              const tags = extractTagsFromContent(post.content.rendered);
-              const locationData = extractLocationFromContent(post.content.rendered);
+              const rating = extractRatingFromContent(post.content.rendered)
+              const tags = extractTagsFromContent(post.content.rendered)
+              const locationData = extractLocationFromContent(post.content.rendered)
 
               return (
                 <motion.div
@@ -167,7 +170,6 @@ const PostHistory = () => {
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         {post.title.rendered}
                       </h3>
-                      
                       <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
                         <div className="flex items-center space-x-1">
                           <SafeIcon icon={FiClock} />
@@ -217,7 +219,7 @@ const PostHistory = () => {
                   </div>
 
                   {post.excerpt.rendered && (
-                    <div
+                    <div 
                       className="text-gray-600 text-sm mb-4"
                       dangerouslySetInnerHTML={{ __html: post.excerpt.rendered }}
                     />
@@ -270,13 +272,13 @@ const PostHistory = () => {
                     </div>
                   )}
                 </motion.div>
-              );
+              )
             })}
           </div>
         )}
       </motion.div>
     </div>
-  );
-};
+  )
+}
 
-export default PostHistory;
+export default PostHistory

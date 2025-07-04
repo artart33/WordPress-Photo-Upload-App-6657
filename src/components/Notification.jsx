@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiCheck, FiAlert, FiInfo, FiX } from 'react-icons/fi'
+import { FiCheck, FiAlertTriangle, FiInfo, FiX } from 'react-icons/fi'
 import SafeIcon from '../common/SafeIcon'
 
 const Notification = ({ notification }) => {
@@ -10,7 +10,7 @@ const Notification = ({ notification }) => {
     switch (notification.type) {
       case 'success': return FiCheck
       case 'error': return FiX
-      case 'warning': return FiAlert
+      case 'warning': return FiAlertTriangle
       default: return FiInfo
     }
   }

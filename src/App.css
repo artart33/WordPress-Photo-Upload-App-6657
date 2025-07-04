@@ -63,9 +63,29 @@
   z-index: 1000;
 }
 
+/* Interactive Map Styles */
+.interactive-map {
+  transition: all 0.3s ease;
+}
+
+.interactive-map:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.map-editing {
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 @media (max-width: 768px) {
   .container {
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+  
+  .interactive-map {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
   }
 }
