@@ -1,35 +1,34 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import SafeIcon from '../common/SafeIcon';
-import * as FiIcons from 'react-icons/fi';
-
-const { FiStar } = FiIcons;
+import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import { FiStar } from 'react-icons/fi'
+import SafeIcon from '../common/SafeIcon'
 
 const StarRating = ({ rating, onRatingChange, readonly = false }) => {
-  const [hoverRating, setHoverRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0)
 
   const handleStarClick = (starValue) => {
     if (!readonly && onRatingChange) {
-      onRatingChange(starValue);
+      onRatingChange(starValue)
     }
-  };
+  }
 
   const handleStarHover = (starValue) => {
     if (!readonly) {
-      setHoverRating(starValue);
+      setHoverRating(starValue)
     }
-  };
+  }
 
   const handleStarLeave = () => {
     if (!readonly) {
-      setHoverRating(0);
+      setHoverRating(0)
     }
-  };
+  }
 
   return (
     <div className="flex items-center space-x-1">
       {[1, 2, 3, 4, 5].map((star) => {
-        const isFilled = star <= (hoverRating || rating);
+        const isFilled = star <= (hoverRating || rating)
+        
         return (
           <motion.button
             key={star}
@@ -44,12 +43,10 @@ const StarRating = ({ rating, onRatingChange, readonly = false }) => {
             whileTap={readonly ? {} : { scale: 0.9 }}
             disabled={readonly}
           >
-            <SafeIcon
-              icon={FiStar}
+            <SafeIcon 
+              icon={FiStar} 
               className={`text-xl transition-all duration-200 ${
-                isFilled
-                  ? 'text-yellow-400 fill-current'
-                  : 'text-gray-300 hover:text-yellow-300'
+                isFilled ? 'text-yellow-400 fill-current' : 'text-gray-300 hover:text-yellow-300'
               }`}
               style={{
                 fill: isFilled ? 'currentColor' : 'none',
@@ -58,15 +55,16 @@ const StarRating = ({ rating, onRatingChange, readonly = false }) => {
               }}
             />
           </motion.button>
-        );
+        )
       })}
+      
       {!readonly && (
         <span className="ml-2 text-sm text-gray-600">
           {rating > 0 ? `${rating}/5` : 'Beoordeel deze foto'}
         </span>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default StarRating;
+export default StarRating

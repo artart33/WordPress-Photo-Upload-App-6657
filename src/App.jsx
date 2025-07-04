@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import Header from './components/Header';
-import PhotoUploader from './components/PhotoUploader';
-import Settings from './components/Settings';
-import PostHistory from './components/PostHistory';
-import { SettingsProvider } from './context/SettingsContext';
-import './App.css';
+import React from 'react'
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import Header from './components/Header'
+import PhotoUploader from './components/PhotoUploader'
+import Settings from './components/Settings'
+import PostHistory from './components/PostHistory'
+import { SettingsProvider } from './context/SettingsContext'
+import './App.css'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('upload');
-
   return (
     <SettingsProvider>
       <Router>
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-          <Header currentPage={currentPage} setCurrentPage={setCurrentPage} />
-          
+          <Header />
           <main className="container mx-auto px-4 py-6 max-w-4xl">
             <AnimatePresence mode="wait">
               <Routes>
@@ -69,7 +66,7 @@ function App() {
         </div>
       </Router>
     </SettingsProvider>
-  );
+  )
 }
 
-export default App;
+export default App

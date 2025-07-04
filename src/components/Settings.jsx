@@ -6,7 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import WordPressService from '../services/WordPressService';
 import Notification from './Notification';
 
-const { FiSave, FiTrash2, FiEye, FiEyeOff, FiCheck, FiLoader } = FiIcons;
+const { FiSave, FiTrash2, FiEye, FiEyeOff, FiCheck, FiLoader, FiWifi, FiWifiOff, FiSmartphone } = FiIcons;
 
 const Settings = () => {
   const { settings, updateSettings, clearSettings } = useSettings();
@@ -18,6 +18,7 @@ const Settings = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState(null);
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
@@ -26,10 +27,7 @@ const Settings = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const testConnection = async () => {
@@ -39,14 +37,43 @@ const Settings = () => {
     }
 
     setIsTesting(true);
+    setConnectionStatus('testing');
+
     try {
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      
+      if (isMobile) {
+        showNotification('📱 Mobiele verbinding wordt getest... Dit kan even duren.', 'info');
+      } else {
+        showNotification('🔄 Verbinding wordt getest...', 'info');
+      }
+
       await WordPressService.testConnection(formData);
-      showNotification('Verbinding succesvol! Instellingen zijn geldig.', 'success');
+      setConnectionStatus('success');
+      showNotification('🎉 Verbinding succesvol! Instellingen zijn geldig.', 'success');
+
+      // Auto-save on successful connection
+      const cleanUrl = formData.wordpressUrl.replace(/\/$/, '');
+      const newSettings = { ...formData, wordpressUrl: cleanUrl };
+      updateSettings(newSettings);
+      
     } catch (error) {
       console.error('Connection test failed:', error);
-      showNotification('Verbinding mislukt. Controleer je instellingen.', 'error');
+      setConnectionStatus('failed');
+      
+      let errorMessage = error.message || 'Verbinding mislukt.';
+      
+      // Add mobile-specific advice
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        errorMessage += '\n\n📱 Mobiele tips:\n• Controleer WiFi/mobiele data\n• Probeer een andere browser\n• Zorg dat je WordPress site HTTPS gebruikt';
+      }
+      
+      showNotification(errorMessage, 'error');
     } finally {
       setIsTesting(false);
+      setTimeout(() => setConnectionStatus(null), 3000);
     }
   };
 
@@ -60,12 +87,8 @@ const Settings = () => {
 
     // Clean URL (remove trailing slash)
     const cleanUrl = formData.wordpressUrl.replace(/\/$/, '');
+    const newSettings = { ...formData, wordpressUrl: cleanUrl };
     
-    const newSettings = {
-      ...formData,
-      wordpressUrl: cleanUrl
-    };
-
     updateSettings(newSettings);
     showNotification('Instellingen opgeslagen!', 'success');
   };
@@ -78,9 +101,31 @@ const Settings = () => {
         username: '',
         password: ''
       });
+      setConnectionStatus(null);
       showNotification('Instellingen gewist', 'info');
     }
   };
+
+  const getConnectionIcon = () => {
+    switch (connectionStatus) {
+      case 'testing': return FiLoader;
+      case 'success': return FiWifi;
+      case 'failed': return FiWifiOff;
+      default: return FiCheck;
+    }
+  };
+
+  const getConnectionColor = () => {
+    switch (connectionStatus) {
+      case 'testing': return 'text-blue-600';
+      case 'success': return 'text-green-600';
+      case 'failed': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  // Detect mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   return (
     <div className="space-y-6">
@@ -92,13 +137,38 @@ const Settings = () => {
         className="bg-white rounded-2xl p-6 shadow-lg"
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">WordPress Instellingen</h2>
-          {settings.isConfigured && (
-            <div className="flex items-center space-x-2 text-green-600">
-              <SafeIcon icon={FiCheck} />
-              <span className="text-sm font-medium">Geconfigureerd</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-3">
+            <h2 className="text-2xl font-bold text-gray-800">WordPress Instellingen</h2>
+            {isMobile && (
+              <div className="flex items-center space-x-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                <SafeIcon icon={FiSmartphone} className="text-xs" />
+                <span>Mobiel</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {connectionStatus && (
+              <div className={`flex items-center space-x-2 ${getConnectionColor()}`}>
+                <SafeIcon 
+                  icon={getConnectionIcon()} 
+                  className={connectionStatus === 'testing' ? 'animate-spin' : ''} 
+                />
+                <span className="text-sm font-medium">
+                  {connectionStatus === 'testing' && 'Testen...'}
+                  {connectionStatus === 'success' && 'Verbonden'}
+                  {connectionStatus === 'failed' && 'Niet verbonden'}
+                </span>
+              </div>
+            )}
+            
+            {settings.isConfigured && !connectionStatus && (
+              <div className="flex items-center space-x-2 text-green-600">
+                <SafeIcon icon={FiCheck} />
+                <span className="text-sm font-medium">Geconfigureerd</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6">
@@ -177,7 +247,13 @@ const Settings = () => {
               type="button"
               onClick={testConnection}
               disabled={isTesting}
-              className="flex items-center justify-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors flex-1"
+              className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors flex-1 ${
+                connectionStatus === 'success' 
+                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                  : connectionStatus === 'failed' 
+                  ? 'bg-red-600 text-white hover:bg-red-700' 
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              } disabled:opacity-50`}
               whileHover={{ scale: isTesting ? 1 : 1.02 }}
               whileTap={{ scale: isTesting ? 1 : 0.98 }}
             >
@@ -188,7 +264,7 @@ const Settings = () => {
                 </>
               ) : (
                 <>
-                  <SafeIcon icon={FiCheck} />
+                  <SafeIcon icon={getConnectionIcon()} />
                   <span>Test Verbinding</span>
                 </>
               )}
@@ -207,6 +283,40 @@ const Settings = () => {
           </div>
         </form>
       </motion.div>
+
+      {/* Mobile-specific Help Section */}
+      {isMobile && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-blue-50 border border-blue-200 rounded-2xl p-6"
+        >
+          <h3 className="text-lg font-bold text-blue-800 mb-4 flex items-center space-x-2">
+            <SafeIcon icon={FiSmartphone} />
+            <span>Mobiele Tips</span>
+          </h3>
+          <div className="space-y-3 text-sm text-blue-700">
+            <div>
+              <strong>📱 Verbindingsproblemen?</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1 ml-4">
+                <li>Zorg voor een stabiele WiFi of mobiele data verbinding</li>
+                <li>Controleer of je WordPress site HTTPS gebruikt</li>
+                <li>Probeer een andere browser (Chrome, Firefox, Safari)</li>
+                <li>Schakel VPN uit als je er een gebruikt</li>
+              </ul>
+            </div>
+            <div>
+              <strong>🔐 WordPress Instellingen:</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1 ml-4">
+                <li>Zorg dat REST API ingeschakeld is</li>
+                <li>Gebruik Application Password voor extra beveiliging</li>
+                <li>Controleer of CORS instellingen correct zijn</li>
+              </ul>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Help Section */}
       <motion.div
