@@ -56,7 +56,6 @@ const PhotoUploader = () => {
     try {
       const locationData = await LocationService.getPhotoLocation(file)
       setLocation(locationData)
-      
       if (locationData.locationName) {
         showNotification(`📍 ${locationData.locationName}`, 'success')
       } else {
@@ -171,16 +170,18 @@ const PhotoUploader = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-8 shadow-lg"
+          className="glassmorphism-card p-8 animate-fade-in-up"
         >
-          <SafeIcon icon={FiSettings} className="text-6xl text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">WordPress Configuratie Vereist</h2>
-          <p className="text-gray-600 mb-6">
+          <SafeIcon icon={FiSettings} className="text-6xl text-purple-400 mx-auto mb-4 upload-icon-glow" />
+          <h2 className="text-2xl font-bold text-primary heading-secondary mb-2">
+            WordPress Configuratie Vereist
+          </h2>
+          <p className="text-secondary mb-6">
             Configureer eerst je WordPress instellingen om foto's te kunnen uploaden.
           </p>
           <motion.a
             href="#/settings"
-            className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center space-x-2 btn-primary px-6 py-3 rounded-lg font-medium transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -200,43 +201,52 @@ const PhotoUploader = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-6 shadow-lg"
+        className="glassmorphism-card p-8 animate-fade-in-up"
       >
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Foto Uploaden</h2>
+        <h2 className="text-3xl font-bold text-primary heading-primary mb-8 text-center">
+          Foto Uploaden
+        </h2>
         
         {!selectedPhoto ? (
           <div
-            className={`upload-area border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-              dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
+            className={`upload-area p-12 text-center transition-all duration-300 ${
+              dragOver ? 'drag-over' : ''
             }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
-            <SafeIcon icon={FiUpload} className="text-6xl text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Sleep een foto hierheen</h3>
-            <p className="text-gray-500 mb-6">of kies een optie hieronder</p>
+            <SafeIcon 
+              icon={FiUpload} 
+              className="text-7xl text-purple-400 mx-auto mb-6 upload-icon-glow" 
+            />
+            <h3 className="text-xl font-semibold text-primary mb-3">
+              Sleep een foto hierheen
+            </h3>
+            <p className="text-secondary mb-8 text-lg">
+              of kies een optie hieronder
+            </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="flex items-center space-x-3 btn-primary px-8 py-4 font-medium hover-lift"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <SafeIcon icon={FiImage} />
+                <SafeIcon icon={FiImage} className="text-lg" />
                 <span>Kies uit Galerij</span>
               </motion.button>
               
               <motion.button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                className="flex items-center space-x-3 btn-secondary px-8 py-4 font-medium hover-lift"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <SafeIcon icon={FiCamera} />
+                <SafeIcon icon={FiCamera} className="text-lg" />
                 <span>Maak Foto</span>
               </motion.button>
             </div>
@@ -258,12 +268,12 @@ const PhotoUploader = () => {
             />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="relative">
               <img
                 src={photoPreview}
                 alt="Preview"
-                className="photo-preview w-full h-64 object-cover rounded-xl"
+                className="photo-preview w-full h-64 object-cover"
               />
               <motion.button
                 type="button"
@@ -275,7 +285,7 @@ const PhotoUploader = () => {
                   setTags([])
                   setRating(0)
                 }}
-                className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                className="absolute top-4 right-4 bg-red-500 text-white p-3 rounded-full hover:bg-red-600 transition-colors shadow-lg"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
@@ -284,7 +294,7 @@ const PhotoUploader = () => {
             </div>
             
             {/* Location & Weather Info */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-6">
               {/* Interactive Map */}
               {location && (
                 <InteractiveMap
@@ -299,11 +309,11 @@ const PhotoUploader = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                  className="glassmorphism-card p-6"
                 >
-                  <div className="flex items-center space-x-2">
-                    <SafeIcon icon={FiClock} className="text-blue-600 animate-pulse" />
-                    <span className="font-medium text-blue-800">📍 Locatie bepalen...</span>
+                  <div className="flex items-center space-x-3">
+                    <SafeIcon icon={FiClock} className="text-purple-400 animate-pulse text-xl" />
+                    <span className="font-medium text-primary">📍 Locatie bepalen...</span>
                   </div>
                 </motion.div>
               )}
@@ -313,31 +323,31 @@ const PhotoUploader = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                  className="glassmorphism-card p-6"
                 >
-                  <div className="flex items-center space-x-2">
-                    <SafeIcon icon={FiCloudRain} className="text-blue-600 animate-pulse" />
-                    <span className="font-medium text-blue-800">🌤️ Weer ophalen...</span>
+                  <div className="flex items-center space-x-3">
+                    <SafeIcon icon={FiCloudRain} className="text-blue-400 animate-pulse text-xl" />
+                    <span className="font-medium text-primary">🌤️ Weer ophalen...</span>
                   </div>
                 </motion.div>
               ) : weather ? (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                  className="glassmorphism-card p-6"
                 >
-                  <div className="flex items-center space-x-2 mb-2">
-                    <SafeIcon icon={FiCloudRain} className="text-blue-600" />
-                    <span className="font-medium text-blue-800">Weer</span>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <SafeIcon icon={FiCloudRain} className="text-blue-400 text-xl" />
+                    <span className="font-medium text-primary">Weer</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-blue-800 font-medium text-sm">
+                  <div className="space-y-2">
+                    <p className="text-primary font-medium">
                       {weather.icon} {weather.temperature}°C
                     </p>
-                    <p className="text-xs text-blue-600">
+                    <p className="text-sm text-secondary">
                       💨 {weather.windSpeed} km/h • 💧 {weather.humidity}%
                     </p>
-                    <p className="text-xs text-blue-700 capitalize">
+                    <p className="text-sm text-secondary capitalize">
                       {weather.condition}
                     </p>
                   </div>
@@ -354,61 +364,63 @@ const PhotoUploader = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           onSubmit={handleSubmit}
-          className="bg-white rounded-2xl p-6 shadow-lg space-y-6"
+          className="glassmorphism-card p-8 space-y-8"
         >
-          <h3 className="text-xl font-bold text-gray-800">Post Details</h3>
+          <h3 className="text-2xl font-bold text-primary heading-secondary">
+            Post Details
+          </h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block form-label mb-3">
               Titel *
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-4 form-input"
               placeholder="Voer een titel in voor je post..."
               required
             />
           </div>
-
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block form-label mb-3">
               Beschrijving
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-4 form-input"
               placeholder="Beschrijf je foto..."
             />
           </div>
-
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block form-label mb-4">
               Beoordeling
             </label>
             <StarRating rating={rating} onRatingChange={setRating} />
           </div>
-
+          
           {/* Tags Input */}
           <TagInput
             tags={tags}
             onTagsChange={setTags}
             placeholder="Voeg tags toe voor specifieke trefwoorden..."
           />
-
+          
           {categories.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block form-label mb-4">
                 Categorieën
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {categories.map((category) => (
                   <label
                     key={category.id}
-                    className="flex items-center space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                    className="flex items-center space-x-3 p-3 glassmorphism-card rounded-lg hover:bg-white/10 cursor-pointer transition-all"
                   >
                     <input
                       type="checkbox"
@@ -420,30 +432,30 @@ const PhotoUploader = () => {
                           setSelectedCategories(selectedCategories.filter(id => id !== category.id))
                         }
                       }}
-                      className="text-blue-600 focus:ring-blue-500"
+                      className="text-purple-600 focus:ring-purple-500 rounded"
                     />
-                    <span className="text-sm text-gray-700">{category.name}</span>
+                    <span className="text-sm text-primary">{category.name}</span>
                   </label>
                 ))}
               </div>
             </div>
           )}
-
+          
           <motion.button
             type="submit"
             disabled={isUploading || !title.trim()}
-            className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full flex items-center justify-center space-x-3 btn-primary px-8 py-5 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             whileHover={{ scale: isUploading ? 1 : 1.02 }}
             whileTap={{ scale: isUploading ? 1 : 0.98 }}
           >
             {isUploading ? (
               <>
-                <SafeIcon icon={FiLoader} className="animate-spin" />
+                <SafeIcon icon={FiLoader} className="animate-spin text-lg" />
                 <span>Uploaden...</span>
               </>
             ) : (
               <>
-                <SafeIcon icon={FiSend} />
+                <SafeIcon icon={FiSend} className="text-lg" />
                 <span>Publiceer Post</span>
               </>
             )}
