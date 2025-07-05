@@ -11,7 +11,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined
-      }
+      },
+      external: []
     }
   },
   server: {
@@ -21,5 +22,19 @@ export default defineConfig({
   preview: {
     host: true,
     port: 4173
+  },
+  define: {
+    global: 'globalThis'
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'framer-motion',
+      'axios',
+      'leaflet',
+      'react-leaflet'
+    ]
   }
 })
