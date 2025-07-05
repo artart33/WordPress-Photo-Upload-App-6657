@@ -42,7 +42,7 @@ class CapacitorService {
         const response = await fetch(image.dataUrl);
         const blob = await response.blob();
         const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        
+
         return file;
       } else {
         throw new Error('Camera only available in native app');
@@ -69,7 +69,7 @@ class CapacitorService {
         const response = await fetch(image.dataUrl);
         const blob = await response.blob();
         const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        
+
         return file;
       } else {
         throw new Error('Gallery only available in native app');
@@ -87,13 +87,18 @@ class CapacitorService {
         
         const position = await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,
-          timeout: 10000
+          timeout: 10000,
+          maximumAge: 60000  // Accept location up to 1 minute old
         });
 
         return {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
+          accuracy: position.coords.accuracy,
+          altitude: position.coords.altitude,
+          heading: position.coords.heading,
+          speed: position.coords.speed,
+          timestamp: position.timestamp
         };
       } else {
         // Fallback to web geolocation
@@ -107,7 +112,11 @@ class CapacitorService {
             (pos) => resolve({
               latitude: pos.coords.latitude,
               longitude: pos.coords.longitude,
-              accuracy: pos.coords.accuracy
+              accuracy: pos.coords.accuracy,
+              altitude: pos.coords.altitude,
+              heading: pos.coords.heading,
+              speed: pos.coords.speed,
+              timestamp: pos.timestamp
             }),
             (error) => reject(new Error(`Geolocation error: ${error.message}`)),
             {
@@ -176,18 +185,19 @@ class CapacitorService {
       if (await this.isNativeApp()) {
         const { Camera } = await import('@capacitor/camera');
         const { Geolocation } = await import('@capacitor/geolocation');
-        
+
         // Request camera permissions
         const cameraPermission = await Camera.requestPermissions();
         
-        // Request location permissions
+        // Request location permissions  
         const locationPermission = await Geolocation.requestPermissions();
-        
+
         return {
           camera: cameraPermission.camera === 'granted',
           location: locationPermission.location === 'granted'
         };
       }
+
       return { camera: true, location: true };
     } catch (error) {
       console.error('Permission request failed:', error);

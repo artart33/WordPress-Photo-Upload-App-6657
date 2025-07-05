@@ -14,7 +14,7 @@ import Notification from './Notification'
 
 const { 
   FiUpload, FiCamera, FiImage, FiMapPin, FiSend, FiLoader, FiSettings, 
-  FiClock, FiCloudRain, FiShare, FiSmartphone, FiSave, FiCheck
+  FiClock, FiCloudRain, FiShare, FiSmartphone, FiSave, FiCheck, FiNavigation
 } = FiIcons
 
 const EnhancedPhotoUploader = () => {
@@ -96,23 +96,28 @@ const EnhancedPhotoUploader = () => {
     reader.onload = (e) => setPhotoPreview(e.target.result)
     reader.readAsDataURL(file)
 
-    // Extract location from EXIF or get current location
+    // Get location with enhanced priority system
     setLocationLoading(true)
     try {
+      showNotification('📍 Locatie bepalen...', 'info')
+      
       const locationData = await EnhancedLocationService.getPhotoLocation(file)
       setLocation(locationData)
       
+      // Show location source information
+      const sourceDescription = EnhancedLocationService.getLocationSourceDescription(locationData.source)
+      
       if (locationData.locationName) {
-        showNotification(`📍 ${locationData.locationName}`, 'success')
+        showNotification(`📍 ${locationData.locationName} (${sourceDescription})`, 'success')
       } else {
-        showNotification('📍 Locatie gevonden', 'success')
+        showNotification(`📍 Locatie gevonden (${sourceDescription})`, 'success')
       }
 
       // Get weather for this location
       await fetchWeatherForLocation(locationData)
     } catch (error) {
       console.error('Location error:', error)
-      showNotification('Kon geen locatie bepalen', 'warning')
+      showNotification(`⚠️ ${error.message}`, 'warning')
       setWeather(null)
     } finally {
       setLocationLoading(false)
@@ -477,11 +482,25 @@ const EnhancedPhotoUploader = () => {
             <div className="grid grid-cols-1 gap-6">
               {/* Interactive Map */}
               {location && (
-                <InteractiveMap
-                  location={location}
-                  onLocationChange={handleLocationChange}
-                  className="col-span-1"
-                />
+                <div className="space-y-2">
+                  {/* Location source indicator */}
+                  <div className="flex items-center space-x-2 text-sm">
+                    <SafeIcon icon={FiNavigation} className="text-blue-400" />
+                    <span className="text-secondary">
+                      {EnhancedLocationService.getLocationSourceDescription(location.source)}
+                    </span>
+                    {location.accuracy && (
+                      <span className="text-xs text-secondary bg-white/10 px-2 py-1 rounded-full">
+                        ±{Math.round(location.accuracy)}m
+                      </span>
+                    )}
+                  </div>
+                  <InteractiveMap
+                    location={location}
+                    onLocationChange={handleLocationChange}
+                    className="col-span-1"
+                  />
+                </div>
               )}
 
               {/* Loading States */}
@@ -495,6 +514,9 @@ const EnhancedPhotoUploader = () => {
                     <SafeIcon icon={FiClock} className="text-purple-400 animate-pulse text-xl" />
                     <span className="font-medium text-primary">📍 Locatie bepalen...</span>
                   </div>
+                  <p className="text-sm text-secondary mt-2">
+                    Eerst GPS van apparaat, dan foto EXIF-data
+                  </p>
                 </motion.div>
               )}
 
