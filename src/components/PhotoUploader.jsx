@@ -38,6 +38,25 @@ const PhotoUploader = () => {
     setTimeout(() => setNotification(null), 5000)
   }
 
+  // Function to fetch weather for a specific location
+  const fetchWeatherForLocation = async (locationData) => {
+    setWeatherLoading(true)
+    try {
+      const weatherData = await WeatherService.getCurrentWeather(
+        locationData.latitude,
+        locationData.longitude
+      )
+      setWeather(weatherData)
+      showNotification(`🌤️ ${weatherData.summary}`, 'info')
+    } catch (error) {
+      console.error('Weather error:', error)
+      showNotification('Kon weer info niet ophalen', 'warning')
+      setWeather(null)
+    } finally {
+      setWeatherLoading(false)
+    }
+  }
+
   const handleFileSelect = useCallback(async (file) => {
     if (!file || !file.type.startsWith('image/')) {
       showNotification('Selecteer een geldige afbeelding', 'error')
@@ -56,6 +75,7 @@ const PhotoUploader = () => {
     try {
       const locationData = await LocationService.getPhotoLocation(file)
       setLocation(locationData)
+      
       if (locationData.locationName) {
         showNotification(`📍 ${locationData.locationName}`, 'success')
       } else {
@@ -63,23 +83,11 @@ const PhotoUploader = () => {
       }
 
       // Get weather for this location
-      setWeatherLoading(true)
-      try {
-        const weatherData = await WeatherService.getCurrentWeather(
-          locationData.latitude,
-          locationData.longitude
-        )
-        setWeather(weatherData)
-        showNotification(`🌤️ ${weatherData.summary}`, 'info')
-      } catch (error) {
-        console.error('Weather error:', error)
-        showNotification('Kon weer info niet ophalen', 'warning')
-      } finally {
-        setWeatherLoading(false)
-      }
+      await fetchWeatherForLocation(locationData)
     } catch (error) {
       console.error('Location error:', error)
       showNotification('Kon geen locatie bepalen', 'warning')
+      setWeather(null)
     } finally {
       setLocationLoading(false)
     }
@@ -96,9 +104,12 @@ const PhotoUploader = () => {
     }
   }, [settings])
 
-  const handleLocationChange = (newLocation) => {
+  const handleLocationChange = async (newLocation) => {
     setLocation(newLocation)
     showNotification(`📍 Locatie aangepast naar ${newLocation.locationName}`, 'success')
+    
+    // Fetch weather for the new location
+    await fetchWeatherForLocation(newLocation)
   }
 
   const handleDrop = useCallback((e) => {
@@ -196,7 +207,7 @@ const PhotoUploader = () => {
   return (
     <div className="space-y-6">
       <Notification notification={notification} />
-      
+
       {/* Photo Upload Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -206,7 +217,7 @@ const PhotoUploader = () => {
         <h2 className="text-3xl font-bold text-primary heading-primary mb-8 text-center">
           Foto Uploaden
         </h2>
-        
+
         {!selectedPhoto ? (
           <div
             className={`upload-area p-12 text-center transition-all duration-300 ${
@@ -216,17 +227,14 @@ const PhotoUploader = () => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
-            <SafeIcon 
-              icon={FiUpload} 
-              className="text-7xl text-purple-400 mx-auto mb-6 upload-icon-glow" 
-            />
+            <SafeIcon icon={FiUpload} className="text-7xl text-purple-400 mx-auto mb-6 upload-icon-glow" />
             <h3 className="text-xl font-semibold text-primary mb-3">
               Sleep een foto hierheen
             </h3>
             <p className="text-secondary mb-8 text-lg">
               of kies een optie hieronder
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button
                 type="button"
@@ -238,7 +246,7 @@ const PhotoUploader = () => {
                 <SafeIcon icon={FiImage} className="text-lg" />
                 <span>Kies uit Galerij</span>
               </motion.button>
-              
+
               <motion.button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
@@ -250,7 +258,7 @@ const PhotoUploader = () => {
                 <span>Maak Foto</span>
               </motion.button>
             </div>
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -292,7 +300,7 @@ const PhotoUploader = () => {
                 ×
               </motion.button>
             </div>
-            
+
             {/* Location & Weather Info */}
             <div className="grid grid-cols-1 gap-6">
               {/* Interactive Map */}
@@ -303,7 +311,7 @@ const PhotoUploader = () => {
                   className="col-span-1"
                 />
               )}
-              
+
               {/* Loading States */}
               {locationLoading && (
                 <motion.div
@@ -317,7 +325,7 @@ const PhotoUploader = () => {
                   </div>
                 </motion.div>
               )}
-              
+
               {/* Weather Display */}
               {weatherLoading ? (
                 <motion.div
@@ -369,7 +377,7 @@ const PhotoUploader = () => {
           <h3 className="text-2xl font-bold text-primary heading-secondary">
             Post Details
           </h3>
-          
+
           <div>
             <label className="block form-label mb-3">
               Titel *
@@ -383,7 +391,7 @@ const PhotoUploader = () => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block form-label mb-3">
               Beschrijving
@@ -396,21 +404,21 @@ const PhotoUploader = () => {
               placeholder="Beschrijf je foto..."
             />
           </div>
-          
+
           <div>
             <label className="block form-label mb-4">
               Beoordeling
             </label>
             <StarRating rating={rating} onRatingChange={setRating} />
           </div>
-          
+
           {/* Tags Input */}
           <TagInput
             tags={tags}
             onTagsChange={setTags}
             placeholder="Voeg tags toe voor specifieke trefwoorden..."
           />
-          
+
           {categories.length > 0 && (
             <div>
               <label className="block form-label mb-4">
@@ -440,7 +448,7 @@ const PhotoUploader = () => {
               </div>
             </div>
           )}
-          
+
           <motion.button
             type="submit"
             disabled={isUploading || !title.trim()}
